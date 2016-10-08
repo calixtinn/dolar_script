@@ -1,0 +1,93 @@
+#!/bin/bash
+
+echo -e "\t\t\t========= ATENÇÃO!! ==========\n"
+echo "Para rodar este script é necessária a instalação de um Software chamado GNUPlot para a geração do gráfico."
+echo "Se você já possui o GNUPlot instalado digite s, quando perguntar se você deseja instalá-lo."
+read -p "Você deseja instalar este Software? Digite s para sim, ou qualquer caractere para não: " option
+
+
+if [[ "$option" == "s" ]]
+	then
+	clear
+	echo "Instalando GNUPlot...."
+	#Este comando instala o software Gnuplot para gerar o gráfico...
+	sudo apt-get install gnuplot -y -qq
+	echo "GNUPlot Instalado..."
+	sleep 1.5
+	clear
+
+else 
+	echo "O gráfico não poderá ser gerado..."
+	sleep 1.5
+	clear
+fi
+
+# Contador para abrir o gráfico no final do programa.
+counter=8
+
+#Salvo a página HTML dentro de uma variável.
+HTML='GET http://www.tititudorancea.com.br/z/usd_brl_taxa_de_cambio_dolar_americano_real_brasileiro.htm'
+
+#Redireciono o conteúdo da variável para um arquivo .html
+$HTML>index.html 
+
+#Descoberto um padrão, salvo o bloco de texto contendo os dados úteis num outro arquivo .html
+awk ' /<table cellSpacing/ {print $0 > "table.html"} ' index.html
+
+#Substituo as TAGS html desnecessárias e substituo o separador <td> por @ para facilitar a filtragem dos dados. Redireciono para outro arquivo, o resultado
+awk ' {gsub(/<td>/, "@"); gsub(/<\/td>/, ""); gsub(/<tr[^>]*>/, ""); gsub(/<\/tr>/,""); gsub(/<[^>]*>/,""); sub(/.{20}/, ""); print $0 > "new_table.html"} ' table.html
+
+#Extraio a data mais recente e a data mais antiga no intervalo de 30 dias. Além do valor da cotação do dólar de Hoje.
+data_final=$(awk -F '@' 'BEGIN{i=0;d=2};{print $d}' new_table.html)
+data_inicio=$(awk -F '@' 'BEGIN{i=0;d=60};{print $d}' new_table.html)
+dolar_hoje=$(awk -F '@' 'BEGIN{i=0;v=3};{print $v}'  new_table.html)
+
+echo -e " ---------------------.- \033[0;30mDolar Script by: Calixto -.---------------------"
+
+echo "========================================================================="
+echo -e "= Hoje 1 Dolar vale \033[00;32mR\$$dolar_hoje\033[0;30m\t\t\t\t\t\t="
+if [[ "$option" == "s" ]]
+	then
+	echo -e "\033[0;30m= O Gráfico da cotação dos últimos 30 dias será aberto em 8 segundos...\t="
+fi
+echo "========================================================================="
+#Salvo os dados em um arquivo .txt para montar o gráfico. Assim como a maior cotação e a menor cotação, e suas respectivas datas.
+awk -F '@' '{i=0}; {d=2}; {v=3}; {min=$3}; {max=$3}; {dia_min=""}; {dia_max=""}; {while(i<30){
+	print (30-i)"\t"$v > "saida.txt"
+	if($v > max) {
+		max=$v;
+		dia_max=$d;
+	}
+	if($v < min) {
+		min=$v;
+		dia_min=$d;
+	}
+	d=d+2
+	v=v+2
+	i++
+}
+}
+{print "\nA maior cotação do dolar foi no dia: \033[04;30m" dia_max "\033[0m com o valor de \033[01;31mR$"max"\033[0m"}
+{print "A menor cotação do dolar foi no dia: \033[04;30m" dia_min "\033[0;30m com o valor de \033[01;34mR$"min"\033[0m \n"}
+' new_table.html
+
+if [[ "$option" == "s" ]]
+	then
+	# Comandos para Plotar o gráfico no gnuplot.
+	echo "reset; set title 'Cotação do Dólar nos úlitmos 30 dias(de $data_inicio até $data_final)'; set grid; set xlabel 'Dias'; set ylabel 'Valor de 1 Dólar em Reais'; set xrange [1:30]; set yrange [2.8:4.0]; set xtics 1, 1, 30; set ytics 2.8, 0.1, 4.0; set term png; set output 'grafico.png'; plot 'saida.txt' title 'Variação' lw 2 lt 1 with lines"| gnuplot
+
+	# Contador para abrir o gráfico.
+	while [ $counter -gt 0 ]
+	do
+		echo "$counter segundos restantes..."
+		sleep 1
+		counter=$(( $counter - 1 ))
+	done
+
+	#Abre a imagem do gráfico utilizando o software Shotwell
+	shotwell grafico.png
+fi
+#Deleta os arquivos .html e .txt gerados para realizar o filtro.
+rm -f *.html
+rm -f *.txt
+
