@@ -1,14 +1,23 @@
 #!/bin/bash
 
+# Contador para abrir o gráfico no final do programa.
+counter=8
+flag=0
+
 echo -e "\t\t\t========= ATENÇÃO!! ==========\n"
-echo -e " - Para a geração do gráfico é necessária a instalação de um Software chamado GNUPlot.\n"
-echo -e " - Se você já possui o GNUPlot instalado digite s ao perguntar se você deseja instalá-lo.\n"
-read -p " -> Você deseja instalar este Software? Digite s para sim, ou qualquer caractere para não: " option
+echo -e " - Para a geração do gráfico é necessária a instalação do GNUPlot.\n"
+echo -e " - Se você já possui ou deseja instalá-lo, digite s, caso contrário digite n.\n"
 
+# Enquanto o usuário não entrar com uma opção válida, repete-se a pergunta.
 
-if [[ "$option" == "s" ]]
+while [ $flag -eq 0 ]
+do
+	read -p "-> Você deseja instalar este Software? " option
+
+if [[ "$option" == "s" ]] # Se sim, o gráfico será exibido
 	then
 	clear
+	flag=1
 	echo "Instalando GNUPlot...."
 	#Este comando instala o software Gnuplot para gerar o gráfico...
 	sudo apt-get install gnuplot -y -qq
@@ -16,14 +25,20 @@ if [[ "$option" == "s" ]]
 	sleep 1.5
 	clear
 
-else 
-	echo "O gráfico não poderá ser gerado..."
+elif [[ "$option" == "n" ]] # Senão o gráfico não será gerado.
+	then
+	flag=1
+	echo "O gráfico não será gerado..."	
 	sleep 1.5
+	clear
+
+else # Caso foi uma opção Inválida, acusa-se 
+	echo -e "Opção inválida! Digite s para sim ou n para não!\n"
+	sleep 2
 	clear
 fi
 
-# Contador para abrir o gráfico no final do programa.
-counter=8
+done
 
 #Salvo a página HTML dentro de uma variável.
 HTML='GET http://www.tititudorancea.com.br/z/usd_brl_taxa_de_cambio_dolar_americano_real_brasileiro.htm'
@@ -52,7 +67,7 @@ if [[ "$option" == "s" ]]
 fi
 echo "========================================================================="
 #Salvo os dados em um arquivo .txt para montar o gráfico. Assim como a maior cotação e a menor cotação, e suas respectivas datas.
-awk -F '@' '{i=0}; {d=2}; {v=3}; {min=$3}; {max=$3}; {dia_min=""}; {dia_max=""}; {while(i<30){
+awk -F '@' '{i=0}; {d=2}; {v=3}; {min=$3}; {max=$3}; {dia_min=$2}; {dia_max=$2}; {while(i<30){
 	print (30-i)"\t"$v > "saida.txt"
 	if($v > max) {
 		max=$v;
@@ -79,8 +94,7 @@ if [[ "$option" == "s" ]]
 	# Contador para abrir o gráfico.
 	while [ $counter -gt 0 ]
 	do
-		echo "$counter segundos restantes..."
-		sleep 1
+	    sleep 1
 		counter=$(( $counter - 1 ))
 	done
 
@@ -91,3 +105,4 @@ fi
 rm -f *.html
 rm -f *.txt
 
+read -p "Pressione qualquer tecla para sair..." x 
