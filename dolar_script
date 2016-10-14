@@ -1,9 +1,9 @@
 #!/bin/bash
 
 echo -e "\t\t\t========= ATENÇÃO!! ==========\n"
-echo "Para rodar este script é necessária a instalação de um Software chamado GNUPlot para a geração do gráfico."
-echo "Se você já possui o GNUPlot instalado digite s, quando perguntar se você deseja instalá-lo."
-read -p "Você deseja instalar este Software? Digite s para sim, ou qualquer caractere para não: " option
+echo -e " - Para a geração do gráfico é necessária a instalação de um Software chamado GNUPlot.\n"
+echo -e " - Se você já possui o GNUPlot instalado digite s ao perguntar se você deseja instalá-lo.\n"
+read -p " -> Você deseja instalar este Software? Digite s para sim, ou qualquer caractere para não: " option
 
 
 if [[ "$option" == "s" ]]
